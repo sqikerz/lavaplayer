@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.10)
 project(samplerate C)
 
 if(NOT ${CMAKE_C_COMPILER_ID} STREQUAL "MSVC")
@@ -7,5 +7,6 @@ else()
 	set(CMAKE_C_FLAGS_RELEASE "/MT")
 endif()
 
-include_directories(.)
+include_directories(. include)
 add_library(samplerate src/samplerate.c src/src_linear.c src/src_sinc.c src/src_zoh.c)
+target_compile_definitions(samplerate PRIVATE PACKAGE="libsamplerate" VERSION="0.2.2" HAVE_STDBOOL_H=1)
