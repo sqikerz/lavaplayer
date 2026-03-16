@@ -1,0 +1,79 @@
+name: Test Natives
+
+on:
+    workflow_dispatch:
+    workflow_call:
+
+jobs:
+    # -------------------------------------------------------------------------
+    # Smoke-test natives on each natively-supported runner
+    # -------------------------------------------------------------------------
+    test-natives:
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    - target: linux-x86-64
+                      runner: ubuntu-latest
+
+                    - target: darwin (Intel)
+                      runner: macos-26-intel
+
+                    - target: darwin (ARM)
+                      runner: macos-26
+
+                    - target: win-x86-64
+                      runner: windows-latest
+
+        runs-on: ${{ matrix.runner }}
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Java
+              uses: actions/setup-java@v4
+              with:
+                  distribution: zulu
+                  java-version: 11
+
+            - name: Test natives (${{ matrix.target }})
+              shell: bash
+              run: ./gradlew :main:test --no-daemon
+
+    # -------------------------------------------------------------------------
+    # Smoke-test linux-musl-x86-64 inside an Alpine (musl) container
+    # -------------------------------------------------------------------------
+    test-natives-musl-x86-64:
+        runs-on: ubuntu-latest
+        container:
+            image: eclipse-temurin:11-jdk-alpine
+        steps:
+            - name: Install git and bash
+              run: apk add --no-cache bash git
+
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Test natives (linux-musl-x86-64)
+              run: ./gradlew :main:test --no-daemon
+
+    # -------------------------------------------------------------------------
+    # Smoke-test linux-aarch64 via QEMU emulation
+    # -------------------------------------------------------------------------
+    test-natives-linux-aarch64:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Set up QEMU
+              uses: docker/setup-qemu-action@v3
+              with:
+                  platforms: arm64
+
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Test natives (linux-aarch64)
+              run: |
+                  docker run --rm --platform linux/arm64 \
+                      -v "${{ github.workspace }}:/work" -w /work \
+                      eclipse-temurin:11-jdk \
+                      ./gradlew :main:test --no-daemon
