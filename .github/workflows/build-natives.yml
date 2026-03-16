@@ -13,9 +13,6 @@ concurrency:
     group: build-natives-${{ github.ref }}
     cancel-in-progress: true
 
-# Library versions are defined in natives/versions.properties
-# Each job reads them via the "Load library versions" step
-
 jobs:
     # -------------------------------------------------------------------------
     # Linux glibc — matrix of 6 targets, all cross-compiled on ubuntu-latest
@@ -59,13 +56,6 @@ jobs:
         steps:
             - name: Checkout
               uses: actions/checkout@v4
-
-            - name: Load library versions
-              run: |
-                  while IFS='=' read -r key value; do
-                      [[ -z "$key" || "$key" == \#* ]] && continue
-                      echo "$(echo "$key" | tr '[:lower:]' '[:upper:]')_VERSION=$value" >> "$GITHUB_ENV"
-                  done < natives/versions.properties
 
             - name: Install build tools and cross-compiler
               run: |
@@ -153,13 +143,6 @@ jobs:
         steps:
             - name: Checkout
               uses: actions/checkout@v4
-
-            - name: Load library versions
-              run: |
-                  while IFS='=' read -r key value; do
-                      [[ -z "$key" || "$key" == \#* ]] && continue
-                      echo "$(echo "$key" | tr '[:lower:]' '[:upper:]')_VERSION=$value" >> "$GITHUB_ENV"
-                  done < natives/versions.properties
 
             - name: Install build tools
               run: |
@@ -284,13 +267,6 @@ jobs:
         steps:
             - name: Checkout
               uses: actions/checkout@v4
-
-            - name: Load library versions
-              run: |
-                  while IFS='=' read -r key value; do
-                      [[ -z "$key" || "$key" == \#* ]] && continue
-                      echo "$(echo "$key" | tr '[:lower:]' '[:upper:]')_VERSION=$value" >> "$GITHUB_ENV"
-                  done < natives/versions.properties
 
             - name: Setup Java
               uses: actions/setup-java@v4
@@ -420,14 +396,6 @@ jobs:
         steps:
             - name: Checkout
               uses: actions/checkout@v4
-
-            - name: Load library versions
-              shell: bash
-              run: |
-                  while IFS='=' read -r key value; do
-                      [[ -z "$key" || "$key" == \#* ]] && continue
-                      echo "$(echo "$key" | tr '[:lower:]' '[:upper:]')_VERSION=$value" >> "$GITHUB_ENV"
-                  done < natives/versions.properties
 
             - name: Setup Java
               uses: actions/setup-java@v4
@@ -592,13 +560,7 @@ jobs:
     # Collect all artifacts and commit to the triggering branch
     # -------------------------------------------------------------------------
     commit-natives:
-        needs:
-            [
-                build-linux,
-                build-linux-musl,
-                merge-darwin,
-                build-windows,
-            ]
+        needs: [build-linux, build-linux-musl, merge-darwin, build-windows]
         runs-on: ubuntu-latest
         permissions:
             contents: write

@@ -42,22 +42,12 @@ set(CMAKE_CXX_FLAGS_RELEASE "${COMPILER_FLAGS} ${COMPILER_FLAGS_RELEASE}")
 
 include_directories("$ENV{JAVA_HOME}/include/")
 
-# Read versions from versions.properties
-file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/../versions.properties" VERSION_LINES)
-foreach(LINE ${VERSION_LINES})
-    if(LINE MATCHES "^([^#=]+)=(.+)$")
-        string(TOUPPER "${CMAKE_MATCH_1}" KEY)
-        string(STRIP "${CMAKE_MATCH_2}" VALUE)
-        set(VERSION_${KEY} "${VALUE}")
-    endif()
-endforeach()
-
 include_directories("${samplerate_SOURCE_DIR}/include")
-include_directories("../opus/opus-${VERSION_OPUS}/include")
+include_directories("../opus/opus/include")
 include_directories("../fdk-aac/libAACdec/include")
 include_directories("../fdk-aac/libSYS/include")
-include_directories("../vorbis/libvorbis-${VERSION_VORBIS}/include")
-include_directories("../vorbis/libogg-${VERSION_OGG}/include")
+include_directories("../vorbis/libvorbis/include")
+include_directories("../vorbis/libogg/include")
 link_directories("../libs/64")
 
 if (DEFINED ENV{DIST_DIR})

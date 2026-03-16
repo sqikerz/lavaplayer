@@ -14,8 +14,6 @@
 #
 # Required env vars (set by CI or caller):
 #   NATIVES_DIR   — absolute path to the natives/ directory
-#   OPUS_VERSION, MPG123_VERSION, OGG_VERSION, VORBIS_VERSION,
-#   SAMPLERATE_VERSION, FDKAAC_VERSION
 
 set -euo pipefail
 
@@ -23,16 +21,6 @@ CONFIGURE_HOST="${1:-native}"
 TOOLCHAIN_FILE="${2:-}"
 
 : "${NATIVES_DIR:=$(cd "$(dirname "$0")/.." && pwd)}"
-
-# Read versions from versions.properties as defaults
-if [ -f "$NATIVES_DIR/versions.properties" ]; then
-    while IFS='=' read -r key value; do
-        [[ -z "$key" || "$key" == \#* ]] && continue
-        upper_key=$(echo "$key" | tr '[:lower:]' '[:upper:]')
-        var_name="${upper_key}_VERSION"
-        eval ": \"\${${var_name}:=${value}}\""
-    done < "$NATIVES_DIR/versions.properties"
-fi
 
 LIBS_DIR="$NATIVES_DIR/libs/64"
 mkdir -p "$LIBS_DIR"
@@ -71,7 +59,7 @@ echo "==> LIBS_DIR=$LIBS_DIR"
 # OGG_INSTALL must be defined before configure so --prefix is baked in at
 # configure time (not just at install time); ogg.pc stores the prefix.
 OGG_INSTALL="$NATIVES_DIR/build/ogg-install-${CONFIGURE_HOST//\//-}"
-OGG_SRC="$NATIVES_DIR/vorbis/libogg-${OGG_VERSION}"
+OGG_SRC="$NATIVES_DIR/vorbis/libogg"
 if [ ! -f "$OGG_INSTALL/lib/libogg.la" ]; then
     echo "==> Configuring, building, and installing libogg..."
     pushd "$OGG_SRC"
@@ -91,7 +79,7 @@ fi
 # ---------------------------------------------------------------------------
 # 2. libvorbis
 # ---------------------------------------------------------------------------
-VORBIS_SRC="$NATIVES_DIR/vorbis/libvorbis-${VORBIS_VERSION}"
+VORBIS_SRC="$NATIVES_DIR/vorbis/libvorbis"
 if [ ! -f "$LIBS_DIR/libvorbis.a" ]; then
     echo "==> Configuring and building libvorbis..."
     pushd "$VORBIS_SRC"
@@ -114,7 +102,7 @@ fi
 # ---------------------------------------------------------------------------
 # 3. opus
 # ---------------------------------------------------------------------------
-OPUS_SRC="$NATIVES_DIR/opus/opus-${OPUS_VERSION}"
+OPUS_SRC="$NATIVES_DIR/opus/opus"
 if [ ! -f "$LIBS_DIR/libopus.a" ]; then
     echo "==> Configuring and building opus..."
     pushd "$OPUS_SRC"
@@ -141,7 +129,7 @@ fi
 # Use CMake (available since mpg123 1.32) to avoid autotools regeneration issues:
 # mpg123 1.33.x tarballs have m4/ files with newer mtimes than configure, causing
 # make to invoke autoconf which fails without libtool m4 macros on CI runners.
-MPG123_SRC="$NATIVES_DIR/mp3/mpg123-${MPG123_VERSION}"
+MPG123_SRC="$NATIVES_DIR/mp3/mpg123"
 if [ ! -f "$LIBS_DIR/libmpg123.a" ]; then
     echo "==> Building mpg123..."
     MPG123_BUILD="$NATIVES_DIR/build/mpg123-build-${CONFIGURE_HOST//\//-}"
