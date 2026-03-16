@@ -3,12 +3,31 @@ name: Test Natives
 on:
     workflow_dispatch:
     workflow_call:
+    push:
+        branches: ["**"]
+
+concurrency:
+    group: test-natives-${{ github.ref }}
+    cancel-in-progress: true
 
 jobs:
+    # -------------------------------------------------------------------------
+    # On push, only run if commit message contains [test natives]
+    # Always run on workflow_dispatch and workflow_call
+    # -------------------------------------------------------------------------
+    check-trigger:
+        runs-on: ubuntu-latest
+        if: >-
+            github.event_name != 'push' ||
+            contains(github.event.head_commit.message, '[test natives]')
+        steps:
+            - run: echo "Tests triggered"
+
     # -------------------------------------------------------------------------
     # Smoke-test natives on each natively-supported runner
     # -------------------------------------------------------------------------
     test-natives:
+        needs: [check-trigger]
         strategy:
             fail-fast: false
             matrix:
@@ -44,6 +63,7 @@ jobs:
     # Smoke-test linux-musl-x86-64 inside an Alpine (musl) container
     # -------------------------------------------------------------------------
     test-natives-musl-x86-64:
+        needs: [check-trigger]
         runs-on: ubuntu-latest
         container:
             image: eclipse-temurin:11-jdk-alpine
@@ -61,6 +81,7 @@ jobs:
     # Smoke-test linux-aarch64 via QEMU emulation
     # -------------------------------------------------------------------------
     test-natives-linux-aarch64:
+        needs: [check-trigger]
         runs-on: ubuntu-latest
         steps:
             - name: Set up QEMU
