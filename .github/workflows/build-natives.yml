@@ -354,7 +354,7 @@ jobs:
                   if-no-files-found: error
 
     # -------------------------------------------------------------------------
-    # Windows — MSYS2 with prebuilt packages (win-x86-64, win-x86, win-arm64)
+    # Windows — MSYS2 with prebuilt packages (win-x86-64, win-x86, win-aarch64)
     # -------------------------------------------------------------------------
     build-windows:
         runs-on: windows-latest
@@ -389,7 +389,7 @@ jobs:
                           mingw-w64-i686-cmake
                           mingw-w64-i686-ninja
 
-                    - target: win-arm64
+                    - target: win-aarch64
                       msys_env: CLANG64
                       msys_prefix: mingw-w64-clang-x86_64
 
@@ -420,7 +420,7 @@ jobs:
 
             # Install codec libraries for win-x86-64 and win-x86
             - name: Setup MSYS2 (win-x86-64 / win-x86)
-              if: matrix.target != 'win-arm64'
+              if: matrix.target != 'win-aarch64'
               uses: msys2/setup-msys2@v2
               with:
                   msystem: ${{ matrix.msys_env }}
@@ -428,9 +428,9 @@ jobs:
                   cache: true
                   install: ${{ matrix.msys_packages }}
 
-            # Install ARM64 codec libs + Clang cross-compiler for win-arm64
-            - name: Setup MSYS2 (win-arm64)
-              if: matrix.target == 'win-arm64'
+            # Install ARM64 codec libs + Clang cross-compiler for win-aarch64
+            - name: Setup MSYS2 (win-aarch64)
+              if: matrix.target == 'win-aarch64'
               uses: msys2/setup-msys2@v2
               with:
                   msystem: CLANG64
@@ -472,7 +472,7 @@ jobs:
 
             # Build win-x86-64 and win-x86 natively with MinGW
             - name: Build connector (win-x86-64 / win-x86)
-              if: matrix.target != 'win-arm64'
+              if: matrix.target != 'win-aarch64'
               shell: msys2 {0}
               run: |
                   TARGET="${{ matrix.target }}"
@@ -501,8 +501,8 @@ jobs:
                   cp "${MSYS_UNIX_ROOT}/bin/libmpg123-0.dll" "$DIST_DIR/"
 
             # Copy aarch64 builtins from CLANGARM64 to where CLANG64's Clang expects them
-            - name: Copy aarch64 builtins for cross-compilation (win-arm64)
-              if: matrix.target == 'win-arm64'
+            - name: Copy aarch64 builtins for cross-compilation (win-aarch64)
+              if: matrix.target == 'win-aarch64'
               shell: msys2 {0}
               run: |
                   CLANG64_VER=$(clang --version | grep -oP '\b[0-9]+\b' | head -1)
@@ -517,12 +517,12 @@ jobs:
                   cp "$FOUND" "$DEST/libclang_rt.builtins.a"
                   echo "Copied $FOUND → $DEST/libclang_rt.builtins.a"
 
-            # Build win-arm64 by cross-compiling with Clang targeting aarch64-w64-mingw32
-            - name: Build connector (win-arm64)
-              if: matrix.target == 'win-arm64'
+            # Build win-aarch64 by cross-compiling with Clang targeting aarch64-w64-mingw32
+            - name: Build connector (win-aarch64)
+              if: matrix.target == 'win-aarch64'
               shell: msys2 {0}
               run: |
-                  TARGET="win-arm64"
+                  TARGET="win-aarch64"
                   WORKSPACE="$(cygpath -u '${{ github.workspace }}')"
                   ARM64_LIB_ROOT="/clangarm64"
                   LIBS_DIR="${WORKSPACE}/natives/libs/64"
@@ -537,7 +537,7 @@ jobs:
                   done
 
                   JAVA_HOME="$(cygpath -u "$JAVA_HOME")"
-                  TOOLCHAIN="${WORKSPACE}/natives/cmake/toolchain-win-arm64.cmake"
+                  TOOLCHAIN="${WORKSPACE}/natives/cmake/toolchain-win-aarch64.cmake"
                   cd "$BUILD_DIR"
                   DIST_DIR="$DIST_DIR" JAVA_HOME="$JAVA_HOME" CLANGARM64_ROOT="$ARM64_LIB_ROOT" \
                   cmake "${WORKSPACE}/natives" \
