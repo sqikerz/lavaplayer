@@ -103,7 +103,7 @@ task load {
             def downloadPath = "$buildDir/tmp/temp.tar.gz"
 
             download.run {
-                src "https://downloads.xiph.org/releases/opus/opus.tar.gz"
+                src "https://downloads.xiph.org/releases/opus/opus-${opusVersion}.tar.gz"
                 dest downloadPath
             }
 
