@@ -6,7 +6,6 @@ import kotlin.io.path.writeText
 
 plugins {
     `java-library`
-    groovy
     alias(libs.plugins.maven.publish.base)
 }
 
@@ -32,14 +31,16 @@ dependencies {
 
     implementation(libs.intellij.annotations)
 
-    testImplementation(libs.groovy)
-    testImplementation(libs.spock.core)
+    testImplementation(libs.junit.jupiter)
     testImplementation(libs.logback.classic)
 }
 
 tasks {
     test {
         useJUnitPlatform()
+        testLogging {
+            events("passed", "failed", "skipped")
+        }
     }
 
     val updateVersion by registering {

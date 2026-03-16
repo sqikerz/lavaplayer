@@ -8,12 +8,15 @@ import java.util.regex.Pattern
 
 apply from: 'natives.gradle'
 
-ext.opusVersion = '1.6.1'
-ext.mpg123Version = '1.33.4'
-ext.oggVersion = '1.3.6'
-ext.vorbisVersion = '1.3.7'
-ext.sampleRateVersion = '0.2.2'
-ext.fdkAacVersion = '2.0.3'
+def versionProps = new Properties()
+file("$projectDir/versions.properties").withInputStream { versionProps.load(it) }
+
+ext.opusVersion = versionProps['opus']
+ext.mpg123Version = versionProps['mpg123']
+ext.oggVersion = versionProps['ogg']
+ext.vorbisVersion = versionProps['vorbis']
+ext.sampleRateVersion = versionProps['samplerate']
+ext.fdkAacVersion = versionProps['fdkaac']
 
 task load {
     doLast {

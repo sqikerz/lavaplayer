@@ -13,14 +13,8 @@ concurrency:
     group: build-natives-${{ github.ref }}
     cancel-in-progress: true
 
-# Library versions — update here only; all jobs inherit these automatically
-env:
-    OPUS_VERSION: "1.6.1"
-    MPG123_VERSION: "1.33.4"
-    OGG_VERSION: "1.3.6"
-    VORBIS_VERSION: "1.3.7"
-    SAMPLERATE_VERSION: "0.2.2"
-    FDKAAC_VERSION: "2.0.3"
+# Library versions are defined in natives/versions.properties
+# Each job reads them via the "Load library versions" step
 
 jobs:
     # -------------------------------------------------------------------------
@@ -66,6 +60,13 @@ jobs:
             - name: Checkout
               uses: actions/checkout@v4
 
+            - name: Load library versions
+              run: |
+                  while IFS='=' read -r key value; do
+                      [[ -z "$key" || "$key" == \#* ]] && continue
+                      echo "$(echo "$key" | tr '[:lower:]' '[:upper:]')_VERSION=$value" >> "$GITHUB_ENV"
+                  done < natives/versions.properties
+
             - name: Install build tools and cross-compiler
               run: |
                   sudo apt-get update -qq
@@ -86,7 +87,7 @@ jobs:
                       natives/vorbis
                       natives/samplerate
                       natives/mp3
-                  key: native-sources-v2-${{ hashFiles('natives/build.gradle') }}
+                  key: native-sources-v2-${{ hashFiles('natives/versions.properties') }}
 
             - name: Download sources
               working-directory: natives
@@ -153,6 +154,13 @@ jobs:
             - name: Checkout
               uses: actions/checkout@v4
 
+            - name: Load library versions
+              run: |
+                  while IFS='=' read -r key value; do
+                      [[ -z "$key" || "$key" == \#* ]] && continue
+                      echo "$(echo "$key" | tr '[:lower:]' '[:upper:]')_VERSION=$value" >> "$GITHUB_ENV"
+                  done < natives/versions.properties
+
             - name: Install build tools
               run: |
                   sudo apt-get update -qq
@@ -206,7 +214,7 @@ jobs:
                       natives/vorbis
                       natives/samplerate
                       natives/mp3
-                  key: native-sources-v2-${{ hashFiles('natives/build.gradle') }}
+                  key: native-sources-v2-${{ hashFiles('natives/versions.properties') }}
 
             - name: Download sources
               working-directory: natives
@@ -261,7 +269,7 @@ jobs:
                   if-no-files-found: error
 
     # -------------------------------------------------------------------------
-    # macOS — matrix of Intel (darwin-x86-64) and Apple Silicon (darwin-aarch64)
+    # macOS — build Intel and Apple Silicon, then merge into a universal binary
     # -------------------------------------------------------------------------
     build-darwin:
         strategy:
@@ -276,6 +284,13 @@ jobs:
         steps:
             - name: Checkout
               uses: actions/checkout@v4
+
+            - name: Load library versions
+              run: |
+                  while IFS='=' read -r key value; do
+                      [[ -z "$key" || "$key" == \#* ]] && continue
+                      echo "$(echo "$key" | tr '[:lower:]' '[:upper:]')_VERSION=$value" >> "$GITHUB_ENV"
+                  done < natives/versions.properties
 
             - name: Setup Java
               uses: actions/setup-java@v4
@@ -292,7 +307,7 @@ jobs:
                       natives/vorbis
                       natives/samplerate
                       natives/mp3
-                  key: native-sources-darwin-v2-${{ matrix.target }}-${{ hashFiles('natives/build.gradle') }}
+                  key: native-sources-darwin-v2-${{ matrix.target }}-${{ hashFiles('natives/versions.properties') }}
 
             - name: Download sources
               working-directory: natives
@@ -322,8 +337,44 @@ jobs:
             - name: Upload artifact
               uses: actions/upload-artifact@v4
               with:
-                  name: natives-${{ matrix.target }}
+                  name: darwin-build-${{ matrix.target }}
                   path: natives/dist/${{ matrix.target }}/
+                  if-no-files-found: error
+
+    # -------------------------------------------------------------------------
+    # macOS — merge per-arch builds into a single universal binary
+    # -------------------------------------------------------------------------
+    merge-darwin:
+        needs: [build-darwin]
+        runs-on: macos-26
+        steps:
+            - name: Download darwin-x86-64
+              uses: actions/download-artifact@v4
+              with:
+                  name: darwin-build-darwin-x86-64
+                  path: /tmp/darwin-x86-64
+
+            - name: Download darwin-aarch64
+              uses: actions/download-artifact@v4
+              with:
+                  name: darwin-build-darwin-aarch64
+                  path: /tmp/darwin-aarch64
+
+            - name: Create universal binary with lipo
+              run: |
+                  mkdir -p /tmp/darwin
+                  lipo -create \
+                      /tmp/darwin-x86-64/libconnector.dylib \
+                      /tmp/darwin-aarch64/libconnector.dylib \
+                      -output /tmp/darwin/libconnector.dylib
+                  echo "Universal binary info:"
+                  lipo -info /tmp/darwin/libconnector.dylib
+
+            - name: Upload universal artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: natives-darwin
+                  path: /tmp/darwin/
                   if-no-files-found: error
 
     # -------------------------------------------------------------------------
@@ -370,6 +421,14 @@ jobs:
             - name: Checkout
               uses: actions/checkout@v4
 
+            - name: Load library versions
+              shell: bash
+              run: |
+                  while IFS='=' read -r key value; do
+                      [[ -z "$key" || "$key" == \#* ]] && continue
+                      echo "$(echo "$key" | tr '[:lower:]' '[:upper:]')_VERSION=$value" >> "$GITHUB_ENV"
+                  done < natives/versions.properties
+
             - name: Setup Java
               uses: actions/setup-java@v4
               with:
@@ -384,7 +443,7 @@ jobs:
                       natives/opus
                       natives/vorbis
                       natives/samplerate
-                  key: native-sources-win-v2-${{ hashFiles('natives/build.gradle') }}
+                  key: native-sources-win-v2-${{ hashFiles('natives/versions.properties') }}
 
             # Download sources using native Gradle (Windows CMD) — needed for fdk-aac headers
             - name: Download sources
@@ -470,6 +529,9 @@ jobs:
                       -DCMAKE_BUILD_TYPE=Release
                   DIST_DIR="$DIST_DIR" JAVA_HOME="$JAVA_HOME" cmake --build .
 
+                  # Copy libmpg123-0.dll from MSYS2 to the output folder
+                  cp "${MSYS_UNIX_ROOT}/bin/libmpg123-0.dll" "$DIST_DIR/"
+
             # Copy aarch64 builtins from CLANGARM64 to where CLANG64's Clang expects them
             - name: Copy aarch64 builtins for cross-compilation (win-arm64)
               if: matrix.target == 'win-arm64'
@@ -516,6 +578,9 @@ jobs:
                       -DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN"
                   DIST_DIR="$DIST_DIR" JAVA_HOME="$JAVA_HOME" cmake --build .
 
+                  # Copy libmpg123-0.dll from CLANGARM64 to the output folder
+                  cp "${ARM64_LIB_ROOT}/bin/libmpg123-0.dll" "$DIST_DIR/"
+
             - name: Upload artifact
               uses: actions/upload-artifact@v4
               with:
@@ -531,7 +596,7 @@ jobs:
             [
                 build-linux,
                 build-linux-musl,
-                build-darwin,
+                merge-darwin,
                 build-windows,
             ]
         runs-on: ubuntu-latest
@@ -585,10 +650,10 @@ jobs:
                     - target: linux-x86-64
                       runner: ubuntu-latest
 
-                    - target: darwin-x86-64
+                    - target: darwin (Intel)
                       runner: macos-26-intel
 
-                    - target: darwin-aarch64
+                    - target: darwin (ARM)
                       runner: macos-26
 
                     - target: win-x86-64

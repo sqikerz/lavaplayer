@@ -55,7 +55,6 @@ fun VersionCatalogBuilder.others() {
 }
 
 fun VersionCatalogBuilder.test() {
-    library("groovy", "org.apache.groovy", "groovy").version("4.0.13")
-    library("spock-core", "org.spockframework", "spock-core").version("2.4-M1-groovy-4.0")
+    library("junit-jupiter", "org.junit.jupiter", "junit-jupiter").version("5.10.2")
     library("logback-classic", "ch.qos.logback", "logback-classic").version("1.4.8")
 }

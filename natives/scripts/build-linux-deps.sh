@@ -23,12 +23,16 @@ CONFIGURE_HOST="${1:-native}"
 TOOLCHAIN_FILE="${2:-}"
 
 : "${NATIVES_DIR:=$(cd "$(dirname "$0")/.." && pwd)}"
-: "${OPUS_VERSION:=1.6.1}"
-: "${MPG123_VERSION:=1.33.4}"
-: "${OGG_VERSION:=1.3.6}"
-: "${VORBIS_VERSION:=1.3.7}"
-: "${SAMPLERATE_VERSION:=0.2.2}"
-: "${FDKAAC_VERSION:=2.0.3}"
+
+# Read versions from versions.properties as defaults
+if [ -f "$NATIVES_DIR/versions.properties" ]; then
+    while IFS='=' read -r key value; do
+        [[ -z "$key" || "$key" == \#* ]] && continue
+        upper_key=$(echo "$key" | tr '[:lower:]' '[:upper:]')
+        var_name="${upper_key}_VERSION"
+        eval ": \"\${${var_name}:=${value}}\""
+    done < "$NATIVES_DIR/versions.properties"
+fi
 
 LIBS_DIR="$NATIVES_DIR/libs/64"
 mkdir -p "$LIBS_DIR"
