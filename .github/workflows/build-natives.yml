@@ -577,11 +577,11 @@ jobs:
                   pattern: "natives-*"
                   merge-multiple: false
 
-            - name: Place artifacts into natives-publish
+            - name: Place artifacts into natives resources
               run: |
                   for dir in /tmp/natives-artifacts/natives-*/; do
                       target=$(basename "$dir" | sed 's/^natives-//')
-                      dest="natives-publish/src/main/resources/natives/${target}"
+                      dest="natives/src/main/resources/natives/${target}"
                       echo "Placing ${target} → ${dest}"
                       mkdir -p "$dest"
                       cp "$dir"* "$dest/"
@@ -591,7 +591,7 @@ jobs:
               run: |
                   git config user.name "github-actions[bot]"
                   git config user.email "github-actions[bot]@users.noreply.github.com"
-                  git add -f natives-publish/src/main/resources/natives/
+                  git add -f natives/src/main/resources/natives/
                   if git diff --staged --quiet; then
                       echo "No changes to native binaries — skipping commit."
                       exit 0

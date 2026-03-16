@@ -15,7 +15,7 @@ base {
 
 dependencies {
     api(projects.common)
-    implementation(projects.nativesPublish)
+    implementation(projects.natives)
     implementation(libs.rhino.engine)
     implementation(libs.slf4j)
 

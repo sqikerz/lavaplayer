@@ -35,7 +35,7 @@ jobs:
                         common/build/libs/lava-common-*.jar
                         extensions/format-xm/build/libs/lavaplayer-ext-format-xm-*.jar
                         extensions/youtube-rotator/build/libs/lavaplayer-ext-youtube-rotator-*.jar
-                        natives-publish/build/libs/lavaplayer-natives-*.jar
+                        natives/build/libs/lavaplayer-natives-*.jar
                     allowUpdates: true
                     omitBodyDuringUpdate: true
                     omitDraftDuringUpdate: true

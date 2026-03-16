@@ -1,5 +1,15 @@
 plugins {
+    id 'java'
     id 'de.undercouch.download'
+    alias(libs.plugins.maven.publish.base)
+}
+
+base {
+    archivesName = "lavaplayer-natives"
+}
+
+mavenPublishing {
+    configure(new com.vanniktech.maven.publish.JavaLibrary(new com.vanniktech.maven.publish.JavadocJar.Javadoc()))
 }
 
 import org.apache.tools.ant.taskdefs.condition.Os
@@ -284,7 +294,7 @@ task checkNatives() {}
 def buildTaskConfig = [
     buildBase      : buildDir,
     projectBase    : projectDir,
-    deployBase     : project(':natives-publish').projectDir,
+    deployBase     : projectDir,
     setupDependency: tasks.load,
     setupDoFirst   : { config -> prepareBuilds(false) },
     compileTask    : tasks.compileNatives,

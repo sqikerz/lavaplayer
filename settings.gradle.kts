@@ -8,7 +8,6 @@ include(
     ":extensions:youtube-rotator",
     ":extensions:format-xm",
     ":natives",
-    ":natives-publish",
     ":testbot"
 )
 
