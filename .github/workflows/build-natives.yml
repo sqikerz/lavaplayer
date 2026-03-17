@@ -557,19 +557,12 @@ jobs:
                   if-no-files-found: error
 
     # -------------------------------------------------------------------------
-    # Collect all artifacts and commit to the triggering branch
+    # Collect all native artifacts into a single upload
     # -------------------------------------------------------------------------
-    commit-natives:
+    package-natives:
         needs: [build-linux, build-linux-musl, merge-darwin, build-windows]
         runs-on: ubuntu-latest
-        permissions:
-            contents: write
         steps:
-            - name: Checkout
-              uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
-
             - name: Download all artifacts
               uses: actions/download-artifact@v4
               with:
@@ -577,32 +570,151 @@ jobs:
                   pattern: "natives-*"
                   merge-multiple: false
 
-            - name: Place artifacts into natives resources
+            - name: Assemble natives resources
               run: |
                   for dir in /tmp/natives-artifacts/natives-*/; do
                       target=$(basename "$dir" | sed 's/^natives-//')
-                      dest="natives/src/main/resources/natives/${target}"
+                      dest="/tmp/natives-resources/natives/${target}"
                       echo "Placing ${target} → ${dest}"
                       mkdir -p "$dest"
                       cp "$dir"* "$dest/"
                   done
 
-            - name: Commit and push
-              run: |
-                  git config user.name "github-actions[bot]"
-                  git config user.email "github-actions[bot]@users.noreply.github.com"
-                  git add -f natives/src/main/resources/natives/
-                  if git diff --staged --quiet; then
-                      echo "No changes to native binaries — skipping commit."
-                      exit 0
-                  fi
-                  git commit -m "chore: update native binaries [skip ci]"
-                  git pull --rebase origin ${{ github.ref_name }}
-                  git push origin HEAD:${{ github.ref_name }}
+            - name: Upload combined artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: natives-resources
+                  path: /tmp/natives-resources/natives/
+                  if-no-files-found: error
 
     # -------------------------------------------------------------------------
-    # Smoke-test the committed natives on all platforms
+    # Smoke-test natives on each natively-supported runner
     # -------------------------------------------------------------------------
     test-natives:
-        needs: [commit-natives]
-        uses: ./.github/workflows/test-natives.yml
+        needs: [package-natives]
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    - target: linux-x86-64
+                      runner: ubuntu-latest
+
+                    - target: darwin (Intel)
+                      runner: macos-26-intel
+
+                    - target: darwin (ARM)
+                      runner: macos-26
+
+                    - target: win-x86-64
+                      runner: windows-latest
+
+        runs-on: ${{ matrix.runner }}
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Download natives
+              uses: actions/download-artifact@v4
+              with:
+                  name: natives-resources
+                  path: natives/src/main/resources/natives
+
+            - name: Setup Java
+              uses: actions/setup-java@v4
+              with:
+                  distribution: zulu
+                  java-version: 11
+
+            - name: Test natives (${{ matrix.target }})
+              shell: bash
+              run: ./gradlew :main:test --no-daemon
+
+    # -------------------------------------------------------------------------
+    # Smoke-test linux-musl-x86-64 inside an Alpine (musl) container
+    # -------------------------------------------------------------------------
+    test-natives-musl-x86-64:
+        needs: [package-natives]
+        runs-on: ubuntu-latest
+        container:
+            image: eclipse-temurin:11-jdk-alpine
+        steps:
+            - name: Install git and bash
+              run: apk add --no-cache bash git
+
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Download natives
+              uses: actions/download-artifact@v4
+              with:
+                  name: natives-resources
+                  path: natives/src/main/resources/natives
+
+            - name: Test natives (linux-musl-x86-64)
+              run: ./gradlew :main:test --no-daemon
+
+    # -------------------------------------------------------------------------
+    # Smoke-test linux-aarch64 via QEMU emulation
+    # -------------------------------------------------------------------------
+    test-natives-linux-aarch64:
+        needs: [package-natives]
+        runs-on: ubuntu-latest
+        steps:
+            - name: Set up QEMU
+              uses: docker/setup-qemu-action@v3
+              with:
+                  platforms: arm64
+
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Download natives
+              uses: actions/download-artifact@v4
+              with:
+                  name: natives-resources
+                  path: natives/src/main/resources/natives
+
+            - name: Test natives (linux-aarch64)
+              run: |
+                  docker run --rm --platform linux/arm64 \
+                      -v "${{ github.workspace }}:/work" -w /work \
+                      eclipse-temurin:11-jdk \
+                      ./gradlew :main:test --no-daemon
+
+    # -------------------------------------------------------------------------
+    # Build and publish the natives JAR
+    # -------------------------------------------------------------------------
+    publish-natives:
+        needs: [test-natives, test-natives-musl-x86-64, test-natives-linux-aarch64]
+        runs-on: ubuntu-latest
+        env:
+            MAVEN_USERNAME: ${{ vars.MAVEN_USERNAME }}
+            MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
+            ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.ORG_GRADLE_PROJECT_MAVENCENTRALPASSWORD }}
+            ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.ORG_GRADLE_PROJECT_MAVENCENTRALUSERNAME }}
+            ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.ORG_GRADLE_PROJECT_SIGNINGINMEMORYKEY }}
+            ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.ORG_GRADLE_PROJECT_SIGNINGINMEMORYKEYPASSWORD }}
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Download natives
+              uses: actions/download-artifact@v4
+              with:
+                  name: natives-resources
+                  path: natives/src/main/resources/natives
+
+            - name: Setup Java
+              uses: actions/setup-java@v4
+              with:
+                  distribution: zulu
+                  java-version: 11
+                  cache: gradle
+
+            - name: Setup Gradle
+              uses: gradle/actions/setup-gradle@v3
+
+            - name: Build and Publish natives JAR
+              run: ./gradlew :natives:build :natives:publish --no-daemon -PMAVEN_USERNAME=$MAVEN_USERNAME -PMAVEN_PASSWORD=$MAVEN_PASSWORD

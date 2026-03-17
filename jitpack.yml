@@ -1,4 +1,4 @@
 install:
-    - ./gradlew clean build publishToMavenLocal
+    - ./gradlew clean build publishToMavenLocal -x :natives:build -x :natives:publish
 jdk:
   - openjdk11
