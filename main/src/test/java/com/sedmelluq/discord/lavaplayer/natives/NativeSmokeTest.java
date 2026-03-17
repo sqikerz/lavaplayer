@@ -11,6 +11,7 @@ import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.local.LocalAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -25,8 +26,17 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class NativeSmokeTest {
+
+    @BeforeAll
+    static void checkNativesAvailable() {
+        assumeTrue(
+            NativeSmokeTest.class.getResource("/natives") != null,
+            "Native binaries not available, skipping smoke tests"
+        );
+    }
 
     @Test
     void connectorNativeLibraryLoads() {
