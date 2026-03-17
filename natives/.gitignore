@@ -1,0 +1,8 @@
+samplerate/src/
+samplerate/include/
+fdk-aac/*
+!fdk-aac/CMakeLists.txt
+vorbis/libogg/
+vorbis/libvorbis/
+opus/
+mp3/

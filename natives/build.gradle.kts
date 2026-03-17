@@ -1,11 +1,12 @@
 import com.vanniktech.maven.publish.JavaLibrary
 import com.vanniktech.maven.publish.JavadocJar
 import org.apache.tools.ant.taskdefs.condition.Os
+import java.net.HttpURLConnection
+import java.net.URI
 import java.util.Properties
 
 plugins {
     `java-library`
-    id("de.undercouch.download") version "5.4.0"
     alias(libs.plugins.maven.publish.base)
 }
 
@@ -28,16 +29,28 @@ val vorbisVersion = versionProps["vorbis"] as String
 val sampleRateVersion = versionProps["samplerate"] as String
 val fdkAacVersion = versionProps["fdkaac"] as String
 
+fun downloadFile(url: String, dest: String) {
+    val destFile = file(dest)
+    destFile.parentFile.mkdirs()
+    val connection = URI(url).toURL().openConnection() as HttpURLConnection
+    connection.instanceFollowRedirects = true
+    connection.inputStream.use { input ->
+        destFile.outputStream().use { output ->
+            input.copyTo(output)
+        }
+    }
+}
+
 tasks.register("load") {
     doLast {
         if (!file("$projectDir/samplerate/src").exists()) {
             val downloadPath = "${layout.buildDirectory.get()}/tmp/libsamplerate.tar.xz"
             val unpackPath = "${layout.buildDirectory.get()}/tmp"
 
-            extensions.getByType(de.undercouch.gradle.tasks.download.DownloadExtension::class).run {
-                src("https://github.com/libsndfile/libsamplerate/releases/download/$sampleRateVersion/libsamplerate-$sampleRateVersion.tar.xz")
-                dest(downloadPath)
-            }
+            downloadFile(
+                "https://github.com/libsndfile/libsamplerate/releases/download/$sampleRateVersion/libsamplerate-$sampleRateVersion.tar.xz",
+                downloadPath
+            )
 
             val process = ProcessBuilder("tar", "xf", downloadPath, "-C", unpackPath)
                 .inheritIO()
@@ -63,10 +76,10 @@ tasks.register("load") {
             val downloadPath = "${layout.buildDirectory.get()}/tmp/fdk-aac-v$fdkAacVersion.zip"
             val unpackPath = "${layout.buildDirectory.get()}"
 
-            extensions.getByType(de.undercouch.gradle.tasks.download.DownloadExtension::class).run {
-                src("https://github.com/mstorsjo/fdk-aac/archive/v$fdkAacVersion.zip")
-                dest(downloadPath)
-            }
+            downloadFile(
+                "https://github.com/mstorsjo/fdk-aac/archive/v$fdkAacVersion.zip",
+                downloadPath
+            )
 
             copy {
                 from(zipTree(file(downloadPath)))
@@ -83,10 +96,10 @@ tasks.register("load") {
         if (!file("$projectDir/vorbis/libogg").exists()) {
             val downloadPath = "${layout.buildDirectory.get()}/tmp/temp.zip"
 
-            extensions.getByType(de.undercouch.gradle.tasks.download.DownloadExtension::class).run {
-                src("https://downloads.xiph.org/releases/ogg/libogg-$oggVersion.zip")
-                dest(downloadPath)
-            }
+            downloadFile(
+                "https://downloads.xiph.org/releases/ogg/libogg-$oggVersion.zip",
+                downloadPath
+            )
 
             copy {
                 from(zipTree(file(downloadPath)))
@@ -100,10 +113,10 @@ tasks.register("load") {
         if (!file("$projectDir/vorbis/libvorbis").exists()) {
             val downloadPath = "${layout.buildDirectory.get()}/tmp/temp.zip"
 
-            extensions.getByType(de.undercouch.gradle.tasks.download.DownloadExtension::class).run {
-                src("https://downloads.xiph.org/releases/vorbis/libvorbis-$vorbisVersion.zip")
-                dest(downloadPath)
-            }
+            downloadFile(
+                "https://downloads.xiph.org/releases/vorbis/libvorbis-$vorbisVersion.zip",
+                downloadPath
+            )
 
             copy {
                 from(zipTree(file(downloadPath)))
@@ -117,10 +130,10 @@ tasks.register("load") {
         if (!file("$projectDir/opus/opus").exists()) {
             val downloadPath = "${layout.buildDirectory.get()}/tmp/temp.tar.gz"
 
-            extensions.getByType(de.undercouch.gradle.tasks.download.DownloadExtension::class).run {
-                src("https://downloads.xiph.org/releases/opus/opus-$opusVersion.tar.gz")
-                dest(downloadPath)
-            }
+            downloadFile(
+                "https://downloads.xiph.org/releases/opus/opus-$opusVersion.tar.gz",
+                downloadPath
+            )
 
             copy {
                 from(tarTree(file(downloadPath)))
@@ -134,10 +147,10 @@ tasks.register("load") {
         if (!Os.isFamily(Os.FAMILY_WINDOWS) && !file("$projectDir/mp3/mpg123").exists()) {
             val downloadPath = "${layout.buildDirectory.get()}/tmp/temp.tar.bz2"
 
-            extensions.getByType(de.undercouch.gradle.tasks.download.DownloadExtension::class).run {
-                src("https://www.mpg123.de/download/mpg123-$mpg123Version.tar.bz2")
-                dest(downloadPath)
-            }
+            downloadFile(
+                "https://www.mpg123.de/download/mpg123-$mpg123Version.tar.bz2",
+                downloadPath
+            )
 
             copy {
                 from(tarTree(file(downloadPath)))
