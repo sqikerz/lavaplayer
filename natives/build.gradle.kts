@@ -173,6 +173,7 @@ tasks.register("load") {
                 into("${layout.buildDirectory.get()}/tmp")
             }
 
+            file("$projectDir/vorbis").mkdirs()
             file("${layout.buildDirectory.get()}/tmp/libogg-$oggVersion")
                 .renameTo(file("$projectDir/vorbis/libogg"))
         }
@@ -190,6 +191,7 @@ tasks.register("load") {
                 into("${layout.buildDirectory.get()}/tmp")
             }
 
+            file("$projectDir/vorbis").mkdirs()
             file("${layout.buildDirectory.get()}/tmp/libvorbis-$vorbisVersion")
                 .renameTo(file("$projectDir/vorbis/libvorbis"))
         }
@@ -207,6 +209,7 @@ tasks.register("load") {
                 into("${layout.buildDirectory.get()}/tmp")
             }
 
+            file("$projectDir/opus").mkdirs()
             file("${layout.buildDirectory.get()}/tmp/opus-$opusVersion")
                 .renameTo(file("$projectDir/opus/opus"))
         }
@@ -224,6 +227,7 @@ tasks.register("load") {
                 into("${layout.buildDirectory.get()}/tmp")
             }
 
+            file("$projectDir/mp3").mkdirs()
             file("${layout.buildDirectory.get()}/tmp/mpg123-$mpg123Version")
                 .renameTo(file("$projectDir/mp3/mpg123"))
         }
