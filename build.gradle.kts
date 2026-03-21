@@ -24,7 +24,7 @@ allprojects {
 }
 
 subprojects {
-    if (project.name == "extensions-project" || project.name == "natives") {
+    if (project.name == "extensions-project") {
         return@subprojects
     }
 

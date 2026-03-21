@@ -7,9 +7,13 @@ include(
     ":extensions",
     ":extensions:youtube-rotator",
     ":extensions:format-xm",
-    ":natives",
     ":testbot"
 )
+
+// :natives is only built and published via the build-natives.yml CI workflow
+if (System.getenv("INCLUDE_NATIVES") != null) {
+    include(":natives")
+}
 
 // https://github.com/gradle/gradle/issues/19254
 project(":extensions").name = "extensions-project"

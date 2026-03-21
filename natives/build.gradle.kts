@@ -1,7 +1,5 @@
 import com.vanniktech.maven.publish.JavaLibrary
 import com.vanniktech.maven.publish.JavadocJar
-import com.vanniktech.maven.publish.MavenPublishBaseExtension
-import com.vanniktech.maven.publish.SonatypeHost
 import org.apache.tools.ant.taskdefs.condition.Os
 import java.net.HttpURLConnection
 import java.net.URI
@@ -16,73 +14,8 @@ base {
     archivesName.set("lavaplayer-natives")
 }
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
-}
-
 mavenPublishing {
     configure(JavaLibrary(JavadocJar.Javadoc()))
-    coordinates(group.toString(), base.archivesName.get(), version.toString())
-
-    val mavenCentralUsername = findProperty("mavenCentralUsername") as String?
-    val mavenCentralPassword = findProperty("mavenCentralPassword") as String?
-    if (!mavenCentralUsername.isNullOrEmpty() && !mavenCentralPassword.isNullOrEmpty()) {
-        publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL, false)
-        if (version.toString().let { !it.endsWith("-SNAPSHOT") }) {
-            signAllPublications()
-        }
-    } else {
-        logger.lifecycle("Not publishing to OSSRH due to missing credentials")
-    }
-
-    pom {
-        name = "lavaplayer"
-        description = "A Lavaplayer fork maintained by Lavalink"
-        url = "https://github.com/lavalink-devs/lavaplayer"
-
-        licenses {
-            license {
-                name = "The Apache License, Version 2.0"
-                url = "https://github.com/lavalink-devs/lavaplayer/blob/main/LICENSE"
-            }
-        }
-
-        developers {
-            developer {
-                id = "freyacodes"
-                name = "Freya Arbjerg"
-                url = "https://www.arbjerg.dev"
-            }
-        }
-
-        scm {
-            url = "https://github.com/lavalink-devs/lavaplayer/"
-            connection = "scm:git:git://github.com/lavalink-devs/lavaplayer.git"
-            developerConnection = "scm:git:ssh://git@github.com/lavalink-devs/lavaplayer.git"
-        }
-    }
-}
-
-publishing {
-    val mavenUsername = findProperty("MAVEN_USERNAME") as String?
-    val mavenPassword = findProperty("MAVEN_PASSWORD") as String?
-    if (!mavenUsername.isNullOrEmpty() && !mavenPassword.isNullOrEmpty()) {
-        repositories {
-            val snapshots = "https://maven.lavalink.dev/snapshots"
-            val releases = "https://maven.lavalink.dev/releases"
-            val isRelease = version.toString().let { !it.endsWith("-SNAPSHOT") }
-
-            maven(if (isRelease) releases else snapshots) {
-                credentials {
-                    username = mavenUsername
-                    password = mavenPassword
-                }
-            }
-        }
-    } else {
-        logger.lifecycle("Not publishing to maven.lavalink.dev because credentials are not set")
-    }
 }
 
 val versionProps = Properties().apply {
