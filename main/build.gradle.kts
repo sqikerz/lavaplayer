@@ -15,7 +15,7 @@ base {
 
 dependencies {
     api(projects.common)
-    implementation(projects.natives)
+    implementation("dev.arbjerg:lavaplayer-natives:+")
     implementation(libs.rhino.engine)
     implementation(libs.slf4j)
 
