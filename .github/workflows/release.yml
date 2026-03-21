@@ -2,7 +2,7 @@ name: Release
 
 on:
     release:
-        types: [ published ]
+        types: [published]
 
 jobs:
     build:
@@ -19,24 +19,24 @@ jobs:
         needs: build
         runs-on: ubuntu-latest
         steps:
-            -   name: Checkout
-                uses: actions/checkout@v4
+            - name: Checkout
+              uses: actions/checkout@v6
 
-            -   name: Download Artifacts
-                uses: actions/download-artifact@v4
-                with:
-                    name: Lavaplayer.zip
+            - name: Download Artifacts
+              uses: actions/download-artifact@v8
+              with:
+                  name: Lavaplayer.zip
 
-            -   name: Upload Artifacts to GitHub Release
-                uses: ncipollo/release-action@v1
-                with:
-                    artifacts: |
-                        main/build/libs/lavaplayer-*.jar
-                        common/build/libs/lava-common-*.jar
-                        extensions/format-xm/build/libs/lavaplayer-ext-format-xm-*.jar
-                        extensions/youtube-rotator/build/libs/lavaplayer-ext-youtube-rotator-*.jar
-                    allowUpdates: true
-                    omitBodyDuringUpdate: true
-                    omitDraftDuringUpdate: true
-                    omitNameDuringUpdate: true
-                    omitPrereleaseDuringUpdate: true
+            - name: Upload Artifacts to GitHub Release
+              uses: ncipollo/release-action@v1
+              with:
+                  artifacts: |
+                      main/build/libs/lavaplayer-*.jar
+                      common/build/libs/lava-common-*.jar
+                      extensions/format-xm/build/libs/lavaplayer-ext-format-xm-*.jar
+                      extensions/youtube-rotator/build/libs/lavaplayer-ext-youtube-rotator-*.jar
+                  allowUpdates: true
+                  omitBodyDuringUpdate: true
+                  omitDraftDuringUpdate: true
+                  omitNameDuringUpdate: true
+                  omitPrereleaseDuringUpdate: true

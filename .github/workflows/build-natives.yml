@@ -55,36 +55,36 @@ jobs:
 
         steps:
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
+
+            - name: Cache dist output
+              id: dist-cache
+              uses: actions/cache@v5
+              with:
+                  path: natives/dist/${{ matrix.target }}
+                  key: natives-dist-v1-${{ matrix.target }}-${{ hashFiles('natives/**') }}
 
             - name: Install build tools and cross-compiler
+              if: steps.dist-cache.outputs.cache-hit != 'true'
               run: |
                   sudo apt-get update -qq
                   sudo apt-get install -y libtool autoconf ${{ matrix.apt_packages }}
 
             - name: Setup Java
-              uses: actions/setup-java@v4
+              if: steps.dist-cache.outputs.cache-hit != 'true'
+              uses: actions/setup-java@v5
               with:
                   distribution: zulu
                   java-version: 11
 
-            - name: Cache native sources
-              uses: actions/cache@v4
-              with:
-                  path: |
-                      natives/fdk-aac
-                      natives/opus
-                      natives/vorbis
-                      natives/samplerate
-                      natives/mp3
-                  key: native-sources-v2-${{ hashFiles('natives/versions.properties') }}
-
             - name: Download sources
+              if: steps.dist-cache.outputs.cache-hit != 'true'
               working-directory: natives
               run: |
                   ../gradlew :natives:load --no-daemon
 
             - name: Build static dependencies
+              if: steps.dist-cache.outputs.cache-hit != 'true'
               working-directory: natives
               env:
                   NATIVES_DIR: ${{ github.workspace }}/natives
@@ -97,6 +97,7 @@ jobs:
                   scripts/build-linux-deps.sh "${{ matrix.configure_host }}" "$TOOLCHAIN"
 
             - name: Build connector
+              if: steps.dist-cache.outputs.cache-hit != 'true'
               working-directory: natives
               run: |
                   TARGET="${{ matrix.target }}"
@@ -117,7 +118,7 @@ jobs:
                   DIST_DIR="$DIST_DIR" JAVA_HOME="$JAVA_HOME" cmake --build . -j"$(nproc)"
 
             - name: Upload artifact
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v7
               with:
                   name: natives-${{ matrix.target }}
                   path: natives/dist/${{ matrix.target }}/
@@ -142,20 +143,28 @@ jobs:
 
         steps:
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
+
+            - name: Cache dist output
+              id: dist-cache
+              uses: actions/cache@v5
+              with:
+                  path: natives/dist/${{ matrix.target }}
+                  key: natives-dist-v1-${{ matrix.target }}-${{ hashFiles('natives/**') }}
 
             - name: Install build tools
+              if: steps.dist-cache.outputs.cache-hit != 'true'
               run: |
                   sudo apt-get update -qq
                   sudo apt-get install -y libtool autoconf
 
             - name: Install musl tools (x86-64 only)
-              if: matrix.target == 'linux-musl-x86-64'
+              if: steps.dist-cache.outputs.cache-hit != 'true' && matrix.target == 'linux-musl-x86-64'
               run: |
                   sudo apt-get install -y musl-tools
 
             - name: Install Zig for musl-aarch64 cross-compilation
-              if: matrix.target == 'linux-musl-aarch64'
+              if: steps.dist-cache.outputs.cache-hit != 'true' && matrix.target == 'linux-musl-aarch64'
               run: |
                   ZIG_VER="0.13.0"
                   curl -fsSL "https://ziglang.org/download/${ZIG_VER}/zig-linux-x86_64-${ZIG_VER}.tar.xz" \
@@ -183,29 +192,20 @@ jobs:
                   echo "MUSL_CROSS_PATH=/usr/local" >> "$GITHUB_ENV"
 
             - name: Setup Java
-              uses: actions/setup-java@v4
+              if: steps.dist-cache.outputs.cache-hit != 'true'
+              uses: actions/setup-java@v5
               with:
                   distribution: zulu
                   java-version: 11
 
-            - name: Cache native sources
-              uses: actions/cache@v4
-              with:
-                  path: |
-                      natives/fdk-aac
-                      natives/opus
-                      natives/vorbis
-                      natives/samplerate
-                      natives/mp3
-                  key: native-sources-v2-${{ hashFiles('natives/versions.properties') }}
-
             - name: Download sources
+              if: steps.dist-cache.outputs.cache-hit != 'true'
               working-directory: natives
               run: |
                   ../gradlew :natives:load --no-daemon
 
             - name: Set CC for musl-aarch64
-              if: matrix.target == 'linux-musl-aarch64'
+              if: steps.dist-cache.outputs.cache-hit != 'true' && matrix.target == 'linux-musl-aarch64'
               run: |
                   echo "CC=${MUSL_CROSS_PATH}/bin/aarch64-linux-musl-gcc" >> "$GITHUB_ENV"
                   echo "CXX=${MUSL_CROSS_PATH}/bin/aarch64-linux-musl-g++" >> "$GITHUB_ENV"
@@ -214,7 +214,7 @@ jobs:
                   echo "STRIP=${MUSL_CROSS_PATH}/bin/aarch64-linux-musl-strip" >> "$GITHUB_ENV"
 
             - name: Set CC for musl-x86-64
-              if: matrix.target == 'linux-musl-x86-64'
+              if: steps.dist-cache.outputs.cache-hit != 'true' && matrix.target == 'linux-musl-x86-64'
               run: |
                   echo "CC=musl-gcc" >> "$GITHUB_ENV"
                   echo "AR=ar" >> "$GITHUB_ENV"
@@ -222,6 +222,7 @@ jobs:
                   echo "STRIP=strip" >> "$GITHUB_ENV"
 
             - name: Build static dependencies
+              if: steps.dist-cache.outputs.cache-hit != 'true'
               working-directory: natives
               env:
                   NATIVES_DIR: ${{ github.workspace }}/natives
@@ -231,6 +232,7 @@ jobs:
                   scripts/build-linux-deps.sh "${{ matrix.musl_host }}" "$TOOLCHAIN"
 
             - name: Build connector
+              if: steps.dist-cache.outputs.cache-hit != 'true'
               working-directory: natives
               run: |
                   TARGET="${{ matrix.target }}"
@@ -245,7 +247,7 @@ jobs:
                   DIST_DIR="$DIST_DIR" JAVA_HOME="$JAVA_HOME" cmake --build . -j"$(nproc)"
 
             - name: Upload artifact
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v7
               with:
                   name: natives-${{ matrix.target }}
                   path: natives/dist/${{ matrix.target }}/
@@ -266,30 +268,29 @@ jobs:
         runs-on: ${{ matrix.runner }}
         steps:
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
+
+            - name: Cache dist output
+              id: dist-cache
+              uses: actions/cache@v5
+              with:
+                  path: natives/dist/${{ matrix.target }}
+                  key: natives-dist-v1-${{ matrix.target }}-${{ hashFiles('natives/**') }}
 
             - name: Setup Java
-              uses: actions/setup-java@v4
+              if: steps.dist-cache.outputs.cache-hit != 'true'
+              uses: actions/setup-java@v5
               with:
                   distribution: zulu
                   java-version: 11
 
-            - name: Cache native sources
-              uses: actions/cache@v4
-              with:
-                  path: |
-                      natives/fdk-aac
-                      natives/opus
-                      natives/vorbis
-                      natives/samplerate
-                      natives/mp3
-                  key: native-sources-darwin-v2-${{ matrix.target }}-${{ hashFiles('natives/versions.properties') }}
-
             - name: Download sources
+              if: steps.dist-cache.outputs.cache-hit != 'true'
               working-directory: natives
               run: ../gradlew :natives:load --no-daemon
 
             - name: Build static dependencies
+              if: steps.dist-cache.outputs.cache-hit != 'true'
               working-directory: natives
               env:
                   NATIVES_DIR: ${{ github.workspace }}/natives
@@ -298,6 +299,7 @@ jobs:
                   scripts/build-linux-deps.sh native ""
 
             - name: Build connector
+              if: steps.dist-cache.outputs.cache-hit != 'true'
               working-directory: natives
               run: |
                   TARGET="${{ matrix.target }}"
@@ -311,7 +313,7 @@ jobs:
                   DIST_DIR="$DIST_DIR" JAVA_HOME="$JAVA_HOME" cmake --build . -j"$(sysctl -n hw.logicalcpu)"
 
             - name: Upload artifact
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v7
               with:
                   name: darwin-build-${{ matrix.target }}
                   path: natives/dist/${{ matrix.target }}/
@@ -325,13 +327,13 @@ jobs:
         runs-on: macos-26
         steps:
             - name: Download darwin-x86-64
-              uses: actions/download-artifact@v4
+              uses: actions/download-artifact@v8
               with:
                   name: darwin-build-darwin-x86-64
                   path: /tmp/darwin-x86-64
 
             - name: Download darwin-aarch64
-              uses: actions/download-artifact@v4
+              uses: actions/download-artifact@v8
               with:
                   name: darwin-build-darwin-aarch64
                   path: /tmp/darwin-aarch64
@@ -347,7 +349,7 @@ jobs:
                   lipo -info /tmp/darwin/libconnector.dylib
 
             - name: Upload universal artifact
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v7
               with:
                   name: natives-darwin
                   path: /tmp/darwin/
@@ -395,32 +397,31 @@ jobs:
 
         steps:
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
+
+            - name: Cache dist output
+              id: dist-cache
+              uses: actions/cache@v5
+              with:
+                  path: natives/dist/${{ matrix.target }}
+                  key: natives-dist-v1-${{ matrix.target }}-${{ hashFiles('natives/**') }}
 
             - name: Setup Java
-              uses: actions/setup-java@v4
+              if: steps.dist-cache.outputs.cache-hit != 'true'
+              uses: actions/setup-java@v5
               with:
                   distribution: zulu
                   java-version: 11
 
-            - name: Cache native sources
-              uses: actions/cache@v4
-              with:
-                  path: |
-                      natives/fdk-aac
-                      natives/opus
-                      natives/vorbis
-                      natives/samplerate
-                  key: native-sources-win-v2-${{ hashFiles('natives/versions.properties') }}
-
             # Download sources using native Gradle (Windows CMD) — needed for fdk-aac headers
             - name: Download sources
+              if: steps.dist-cache.outputs.cache-hit != 'true'
               shell: cmd
               run: gradlew.bat :natives:load --no-daemon
 
             # Install codec libraries for win-x86-64 and win-x86
             - name: Setup MSYS2 (win-x86-64 / win-x86)
-              if: matrix.target != 'win-aarch64'
+              if: steps.dist-cache.outputs.cache-hit != 'true' && matrix.target != 'win-aarch64'
               uses: msys2/setup-msys2@v2
               with:
                   msystem: ${{ matrix.msys_env }}
@@ -430,7 +431,7 @@ jobs:
 
             # Install ARM64 codec libs + Clang cross-compiler for win-aarch64
             - name: Setup MSYS2 (win-aarch64)
-              if: matrix.target == 'win-aarch64'
+              if: steps.dist-cache.outputs.cache-hit != 'true' && matrix.target == 'win-aarch64'
               uses: msys2/setup-msys2@v2
               with:
                   msystem: CLANG64
@@ -450,7 +451,7 @@ jobs:
 
             # win-x86: fdk-aac and libsamplerate are not in MSYS2 MINGW32 — build from cached sources
             - name: Build missing MINGW32 deps from source (win-x86 only)
-              if: matrix.target == 'win-x86'
+              if: steps.dist-cache.outputs.cache-hit != 'true' && matrix.target == 'win-x86'
               shell: msys2 {0}
               run: |
                   WORKSPACE="$(cygpath -u '${{ github.workspace }}')"
@@ -472,7 +473,7 @@ jobs:
 
             # Build win-x86-64 and win-x86 natively with MinGW
             - name: Build connector (win-x86-64 / win-x86)
-              if: matrix.target != 'win-aarch64'
+              if: steps.dist-cache.outputs.cache-hit != 'true' && matrix.target != 'win-aarch64'
               shell: msys2 {0}
               run: |
                   TARGET="${{ matrix.target }}"
@@ -502,7 +503,7 @@ jobs:
 
             # Copy aarch64 builtins from CLANGARM64 to where CLANG64's Clang expects them
             - name: Copy aarch64 builtins for cross-compilation (win-aarch64)
-              if: matrix.target == 'win-aarch64'
+              if: steps.dist-cache.outputs.cache-hit != 'true' && matrix.target == 'win-aarch64'
               shell: msys2 {0}
               run: |
                   CLANG64_VER=$(clang --version | grep -oP '\b[0-9]+\b' | head -1)
@@ -519,7 +520,7 @@ jobs:
 
             # Build win-aarch64 by cross-compiling with Clang targeting aarch64-w64-mingw32
             - name: Build connector (win-aarch64)
-              if: matrix.target == 'win-aarch64'
+              if: steps.dist-cache.outputs.cache-hit != 'true' && matrix.target == 'win-aarch64'
               shell: msys2 {0}
               run: |
                   TARGET="win-aarch64"
@@ -550,7 +551,7 @@ jobs:
                   cp "${ARM64_LIB_ROOT}/bin/libmpg123-0.dll" "$DIST_DIR/"
 
             - name: Upload artifact
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v7
               with:
                   name: natives-${{ matrix.target }}
                   path: natives/dist/${{ matrix.target }}/
@@ -564,7 +565,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Download all artifacts
-              uses: actions/download-artifact@v4
+              uses: actions/download-artifact@v8
               with:
                   path: /tmp/natives-artifacts
                   pattern: "natives-*"
@@ -611,16 +612,16 @@ jobs:
         runs-on: ${{ matrix.runner }}
         steps:
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
 
             - name: Download natives
-              uses: actions/download-artifact@v4
+              uses: actions/download-artifact@v8
               with:
                   name: natives-resources
                   path: natives/src/main/resources/natives
 
             - name: Setup Java
-              uses: actions/setup-java@v4
+              uses: actions/setup-java@v5
               with:
                   distribution: zulu
                   java-version: 11
@@ -642,10 +643,10 @@ jobs:
               run: apk add --no-cache bash git
 
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
 
             - name: Download natives
-              uses: actions/download-artifact@v4
+              uses: actions/download-artifact@v8
               with:
                   name: natives-resources
                   path: natives/src/main/resources/natives
@@ -661,15 +662,15 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Set up QEMU
-              uses: docker/setup-qemu-action@v3
+              uses: docker/setup-qemu-action@v4
               with:
                   platforms: arm64
 
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
 
             - name: Download natives
-              uses: actions/download-artifact@v4
+              uses: actions/download-artifact@v8
               with:
                   name: natives-resources
                   path: natives/src/main/resources/natives
@@ -685,7 +686,8 @@ jobs:
     # Build and publish the natives JAR
     # -------------------------------------------------------------------------
     publish-natives:
-        needs: [test-natives, test-natives-musl-x86-64, test-natives-linux-aarch64]
+        needs:
+            [test-natives, test-natives-musl-x86-64, test-natives-linux-aarch64]
         runs-on: ubuntu-latest
         env:
             MAVEN_USERNAME: ${{ vars.MAVEN_USERNAME }}
@@ -696,25 +698,25 @@ jobs:
             ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.ORG_GRADLE_PROJECT_SIGNINGINMEMORYKEYPASSWORD }}
         steps:
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
               with:
                   fetch-depth: 0
 
             - name: Download natives
-              uses: actions/download-artifact@v4
+              uses: actions/download-artifact@v8
               with:
                   name: natives-resources
                   path: natives/src/main/resources/natives
 
             - name: Setup Java
-              uses: actions/setup-java@v4
+              uses: actions/setup-java@v5
               with:
                   distribution: zulu
                   java-version: 11
                   cache: gradle
 
             - name: Setup Gradle
-              uses: gradle/actions/setup-gradle@v3
+              uses: gradle/actions/setup-gradle@v5
 
             - name: Build and Publish natives JAR
               run: ./gradlew :natives:build :natives:publish --no-daemon -PMAVEN_USERNAME=$MAVEN_USERNAME -PMAVEN_PASSWORD=$MAVEN_PASSWORD
