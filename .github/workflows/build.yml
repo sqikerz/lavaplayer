@@ -45,7 +45,7 @@ jobs:
               uses: gradle/actions/setup-gradle@v5
 
             - name: Build and Publish
-              run: ./gradlew build publish -x :natives:build -x :natives:publish --no-daemon -PMAVEN_USERNAME=$MAVEN_USERNAME -PMAVEN_PASSWORD=$MAVEN_PASSWORD
+              run: ./gradlew build publish --no-daemon -PMAVEN_USERNAME=$MAVEN_USERNAME -PMAVEN_PASSWORD=$MAVEN_PASSWORD
 
             - name: Upload Artifacts
               uses: actions/upload-artifact@v7
