@@ -1,4 +1,4 @@
-name: Publish
+name: Build
 on:
     push:
         branches: ["**"]
@@ -42,7 +42,7 @@ jobs:
                   cache: gradle
 
             - name: Setup Gradle
-              uses: gradle/actions/setup-gradle@v5
+              uses: gradle/actions/setup-gradle@v6
 
             - name: Build and Publish
               run: ./gradlew build publish --no-daemon -PMAVEN_USERNAME=$MAVEN_USERNAME -PMAVEN_PASSWORD=$MAVEN_PASSWORD
