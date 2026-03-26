@@ -670,17 +670,12 @@ jobs:
               run: ./gradlew :main:test --no-daemon
 
     # -------------------------------------------------------------------------
-    # Smoke-test linux-aarch64 via QEMU emulation
+    # Smoke-test linux-aarch64 on an ARM64 runner (Ubuntu 24.04)
     # -------------------------------------------------------------------------
     test-natives-linux-aarch64:
         needs: [package-natives]
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04-arm
         steps:
-            - name: Set up QEMU
-              uses: docker/setup-qemu-action@v4
-              with:
-                  platforms: arm64
-
             - name: Checkout
               uses: actions/checkout@v6
 
@@ -690,12 +685,14 @@ jobs:
                   name: natives-resources
                   path: natives/src/main/resources/natives
 
+            - name: Setup Java
+              uses: actions/setup-java@v5
+              with:
+                  distribution: zulu
+                  java-version: 11
+
             - name: Test natives (linux-aarch64)
-              run: |
-                  docker run --rm --platform linux/arm64 \
-                      -v "${{ github.workspace }}:/work" -w /work \
-                      eclipse-temurin:11-jdk \
-                      ./gradlew :main:test --no-daemon
+              run: ./gradlew :main:test --no-daemon
 
     # -------------------------------------------------------------------------
     # Build and publish the natives JAR
