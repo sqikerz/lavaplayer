@@ -17,4 +17,4 @@ endif()
 
 include_directories(. include)
 add_library(samplerate src/samplerate.c src/src_linear.c src/src_sinc.c src/src_zoh.c)
-target_compile_definitions(samplerate PRIVATE PACKAGE="libsamplerate" VERSION="${SAMPLERATE_VERSION}" HAVE_STDBOOL_H=1)
+target_compile_definitions(samplerate PRIVATE PACKAGE="libsamplerate" VERSION="${SAMPLERATE_VERSION}" HAVE_STDBOOL_H=1 ENABLE_SINC_BEST_CONVERTER ENABLE_SINC_MEDIUM_CONVERTER ENABLE_SINC_FAST_CONVERTER)

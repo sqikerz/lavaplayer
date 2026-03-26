@@ -2,9 +2,14 @@
 #include <samplerate.h>
 #include <stdint.h>
 
-CONNECTOR_EXPORT jlong JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_samplerate_SampleRateLibrary_create(JNIEnv *jni, jobject me, jint type, jint channels) {
-	int error;
-	return (jlong)(uintptr_t)src_new(type, channels, &error);
+CONNECTOR_EXPORT jlong JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_samplerate_SampleRateLibrary_create(JNIEnv *jni, jobject me, jint type, jint channels, jintArray error_array) {
+	int error = 0;
+	SRC_STATE* state = src_new(type, channels, &error);
+
+	jint error_out = (jint)error;
+	(*jni)->SetIntArrayRegion(jni, error_array, 0, 1, &error_out);
+
+	return (jlong)(uintptr_t)state;
 }
 
 CONNECTOR_EXPORT void JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_samplerate_SampleRateLibrary_destroy(JNIEnv *jni, jobject me, jlong instance) {
