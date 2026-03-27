@@ -95,7 +95,10 @@ jobs:
               with:
                   distribution: zulu
                   java-version: 11
-                  cache: gradle
+
+            - name: Setup Gradle
+              if: steps.dist-cache.outputs.cache-hit != 'true'
+              uses: gradle/actions/setup-gradle@v6
 
             - name: Download sources
               if: steps.dist-cache.outputs.cache-hit != 'true'
@@ -216,7 +219,10 @@ jobs:
               with:
                   distribution: zulu
                   java-version: 11
-                  cache: gradle
+
+            - name: Setup Gradle
+              if: steps.dist-cache.outputs.cache-hit != 'true'
+              uses: gradle/actions/setup-gradle@v6
 
             - name: Download sources
               if: steps.dist-cache.outputs.cache-hit != 'true'
@@ -302,7 +308,10 @@ jobs:
               with:
                   distribution: zulu
                   java-version: 11
-                  cache: gradle
+
+            - name: Setup Gradle
+              if: steps.dist-cache.outputs.cache-hit != 'true'
+              uses: gradle/actions/setup-gradle@v6
 
             - name: Download sources
               if: steps.dist-cache.outputs.cache-hit != 'true'
@@ -432,7 +441,10 @@ jobs:
               with:
                   distribution: zulu
                   java-version: 11
-                  cache: gradle
+
+            - name: Setup Gradle
+              if: steps.dist-cache.outputs.cache-hit != 'true'
+              uses: gradle/actions/setup-gradle@v6
 
             # Download sources using native Gradle (Windows CMD) — needed for fdk-aac headers
             - name: Download sources
@@ -646,7 +658,9 @@ jobs:
               with:
                   distribution: zulu
                   java-version: 11
-                  cache: gradle
+
+            - name: Setup Gradle
+              uses: gradle/actions/setup-gradle@v6
 
             - name: Test natives (${{ matrix.target }})
               shell: bash
@@ -697,7 +711,9 @@ jobs:
               with:
                   distribution: zulu
                   java-version: 11
-                  cache: gradle
+
+            - name: Setup Gradle
+              uses: gradle/actions/setup-gradle@v6
 
             - name: Test natives (linux-aarch64)
               run: ./gradlew :main:test --no-daemon
@@ -733,7 +749,6 @@ jobs:
               with:
                   distribution: zulu
                   java-version: 11
-                  cache: gradle
 
             - name: Setup Gradle
               uses: gradle/actions/setup-gradle@v6
