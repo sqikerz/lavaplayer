@@ -10,8 +10,8 @@ include(
     ":testbot"
 )
 
-// :natives is only built and published via the build-natives.yml CI workflow
-if (System.getenv("INCLUDE_NATIVES") != null) {
+// :natives is skipped on JitPack builds
+if (System.getenv("JITPACK") != "true") {
     include(":natives")
 }
 

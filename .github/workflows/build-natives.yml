@@ -31,9 +31,6 @@ concurrency:
     group: build-natives-${{ github.ref }}
     cancel-in-progress: true
 
-env:
-    INCLUDE_NATIVES: true
-
 jobs:
     # -------------------------------------------------------------------------
     # Linux glibc — matrix of 6 targets, all cross-compiled on ubuntu-latest
