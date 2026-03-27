@@ -6,6 +6,12 @@ on:
         paths:
             - "natives/**"
             - ".github/workflows/build-natives.yml"
+    workflow_dispatch:
+        inputs:
+            skip-cache:
+                description: "Skip all caches and force a full rebuild"
+                type: boolean
+                default: false
     workflow_call:
         secrets:
             MAVEN_USERNAME:
@@ -73,6 +79,7 @@ jobs:
               uses: actions/checkout@v6
 
             - name: Cache dist output
+              if: inputs.skip-cache != true
               id: dist-cache
               uses: actions/cache@v5
               with:
@@ -159,6 +166,7 @@ jobs:
               uses: actions/checkout@v6
 
             - name: Cache dist output
+              if: inputs.skip-cache != true
               id: dist-cache
               uses: actions/cache@v5
               with:
@@ -282,6 +290,7 @@ jobs:
               uses: actions/checkout@v6
 
             - name: Cache dist output
+              if: inputs.skip-cache != true
               id: dist-cache
               uses: actions/cache@v5
               with:
@@ -410,6 +419,7 @@ jobs:
               uses: actions/checkout@v6
 
             - name: Cache dist output
+              if: inputs.skip-cache != true
               id: dist-cache
               uses: actions/cache@v5
               with:
