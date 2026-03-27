@@ -95,6 +95,7 @@ jobs:
               with:
                   distribution: zulu
                   java-version: 11
+                  cache: gradle
 
             - name: Download sources
               if: steps.dist-cache.outputs.cache-hit != 'true'
@@ -215,6 +216,7 @@ jobs:
               with:
                   distribution: zulu
                   java-version: 11
+                  cache: gradle
 
             - name: Download sources
               if: steps.dist-cache.outputs.cache-hit != 'true'
@@ -300,6 +302,7 @@ jobs:
               with:
                   distribution: zulu
                   java-version: 11
+                  cache: gradle
 
             - name: Download sources
               if: steps.dist-cache.outputs.cache-hit != 'true'
@@ -429,6 +432,7 @@ jobs:
               with:
                   distribution: zulu
                   java-version: 11
+                  cache: gradle
 
             # Download sources using native Gradle (Windows CMD) — needed for fdk-aac headers
             - name: Download sources
@@ -642,6 +646,7 @@ jobs:
               with:
                   distribution: zulu
                   java-version: 11
+                  cache: gradle
 
             - name: Test natives (${{ matrix.target }})
               shell: bash
@@ -692,6 +697,7 @@ jobs:
               with:
                   distribution: zulu
                   java-version: 11
+                  cache: gradle
 
             - name: Test natives (linux-aarch64)
               run: ./gradlew :main:test --no-daemon
